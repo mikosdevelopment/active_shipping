@@ -139,7 +139,9 @@ module ActiveMerchant
 
         rate_request = build_rate_request(origin, destination, packages, options)
 
-        response = commit(save_request(rate_request), (options[:test] || false)).gsub(/<(\/)?.*?\:(.*?)>/, '<\1\2>')
+        # response = commit(save_request(rate_request), (options[:test] || false)).gsub(/<(\/)?.*?\:(.*?)>/, '<\1\2>')
+        xml = commit(save_request(rate_request), (options[:test] || false))
+        response = remove_version_prefix(xml)
 
         parse_rate_response(origin, destination, packages, response, options)
       end
@@ -148,11 +150,23 @@ module ActiveMerchant
         options = @options.update(options)
 
         tracking_request = build_tracking_request(tracking_number, options)
-        response = commit(save_request(tracking_request), (options[:test] || false)).gsub(/<(\/)?.*?\:(.*?)>/, '<\1\2>')
+
+        # response = commit(save_request(tracking_request), (options[:test] || false)).gsub(/<(\/)?.*?\:(.*?)>/, '<\1\2>')
+        xml = commit(save_request(tracking_request), (options[:test] || false))
+        response = remove_version_prefix(xml)
+
         parse_tracking_response(response, options)
       end
 
       protected
+      def remove_version_prefix(xml)
+        if xml =~ /xmlns:v[0-9]/
+          xml.gsub(/<(\/)?.*?\:(.*?)>/, '<\1\2>')
+        else
+          xml
+        end
+      end
+
       def build_rate_request(origin, destination, packages, options={})
         imperial = ['US','LR','MM'].include?(origin.country_code(:alpha2))
 
